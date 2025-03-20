@@ -85,10 +85,10 @@ contract BondingCurve is BancorFormula, Ownable, ReentrancyGuard {
 
         uint256 tokenAmount = getTokensForETH(msg.value);
         //require(tokenAmount <= MAX_BUY_AMOUNT, "Exceeds max buy");
-        // require(
-        //     totalSoldAmount + tokenAmount <= INITIAL_SUPPLY,
-        //     "Exceeds available supply"
-        // );
+        require(
+            totalSoldAmount + tokenAmount <= INITIAL_SUPPLY,
+            "Exceeds available supply"
+        );
 
         uint256 burnAmount = (tokenAmount * BURN_PERCENT) / BURN_DENOMINATOR;
         uint256 remainingAmount = tokenAmount - burnAmount;
