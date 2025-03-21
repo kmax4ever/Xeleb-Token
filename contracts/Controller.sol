@@ -31,7 +31,7 @@ contract Controller is Ownable {
         string memory name,
         string memory symbol,
         address stakingWallet,
-        uint256 totalSupply,
+        uint256 totalSupply
     ) public payable returns (address) {
         _payFee();
         AiAgentToken agentToken = new AiAgentToken(
@@ -94,7 +94,8 @@ contract Controller is Ownable {
     function transferAdmin(address newAdmin) public onlyOwner {
         transferOwnership(newAdmin);
     }
-    function getTokenByOwner(address owner) public view returns (address) { //TODO: REMOVE later, use for dev contract test.
+    function getTokenByOwner(address owner) public view returns (address) {
+        //TODO: REMOVE later, use for dev contract test.
         return _tokens[owner];
     }
 
