@@ -235,7 +235,7 @@ async function main() {
   const sellAmount = 5000000;
   await getTokensForETH(bodingContract, 23.7);
   while (isContinue) {
-    let buyAmount = randomInt(1, 10) / 10;
+    let buyAmount = randomInt(1, 10) / 100;
     if (buyAmount + totalRaiseAamount > 24) {
       console.log("xxxxxxxxxxxxxxxxxx");
 
