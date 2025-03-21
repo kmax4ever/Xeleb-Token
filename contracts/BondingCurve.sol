@@ -197,6 +197,13 @@ contract BondingCurve is BancorFormula, Ownable, ReentrancyGuard {
     function increaseTotalSold(uint256 amout) external onlyOwner {
         totalSoldAmount += amout;
     }
+    function getCurrentPrice() public view returns (uint256) {
+        uint256 ethAmount = 1e10;
+        uint256 tokenAmount = getTokensForETH(ethAmount);
+        console.log("ethAmount", ethAmount);
+        console.log("tokenAmount", tokenAmount);
+        return (ethAmount * 1e18) / tokenAmount;
+    }
 }
 //TODO
 // important : bonding curve price

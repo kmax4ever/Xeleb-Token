@@ -1,0 +1,55 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "LinearBondingCurve",
+  "sourceName": "contracts/lib/LinearCurve.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "INITIAL_PRICE",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "INITIAL_SUPPLY",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "PRICE_SLOPE",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x6080604052348015600f57600080fd5b50609e8061001e6000396000f3fe6080604052348015600f57600080fd5b5060043610603c5760003560e01c8063180fac981460415780632ff2e9dc1460615780637c5e2795146041575b600080fd5b604f670de0b6b3a764000081565b60405190815260200160405180910390f35b604f60008156fea26469706673582212208f40c1a69d7d19dcd72a5eb932842a1c6e1bb77d92f3313b0a922f59cf8283f764736f6c63430008140033",
+  "deployedBytecode": "0x6080604052348015600f57600080fd5b5060043610603c5760003560e01c8063180fac981460415780632ff2e9dc1460615780637c5e2795146041575b600080fd5b604f670de0b6b3a764000081565b60405190815260200160405180910390f35b604f60008156fea26469706673582212208f40c1a69d7d19dcd72a5eb932842a1c6e1bb77d92f3313b0a922f59cf8283f764736f6c63430008140033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}
