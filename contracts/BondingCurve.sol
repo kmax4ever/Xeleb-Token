@@ -111,13 +111,23 @@ contract BondingCurve is Ownable, ReentrancyGuard {
     }
 
     function getTokensForETH(uint256 _ethAmount) public view returns (uint256) {
-        return calculatePurchaseReturn(_ethAmount);
+        // for sure not over MAX_SUPPLY
+        uint256 tokenAmount = calculatePurchaseReturn(_ethAmount);
+        if (totalSoldAmount + tokenAmount > MAX_SUPPLY) {
+            tokenAmount = MAX_SUPPLY - totalSoldAmount;
+        }
+        return tokenAmount;
     }
 
     function getETHForTokens(
         uint256 tokenAmount
     ) public view returns (uint256) {
-        return calculateSaleReturn(tokenAmount);
+        uint256 ethAmount = calculateSaleReturn(tokenAmount);
+        // for sure not over balance
+        if (address(this).balance < ethAmount) {
+            ethAmount = address(this).balance;
+        }
+        return ethAmount;
     }
 
     // Buy tokens with ETH
