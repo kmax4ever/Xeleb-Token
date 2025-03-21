@@ -242,6 +242,9 @@ async function main() {
       buyAmount = 24 - totalRaiseAamount;
     }
 
+    const currentPrice = await bodingContract.getCurrentPrice();
+    console.log({ currentPrice: +fromWei(currentPrice) });
+
     await buyFunc(bodingContract, user1, token, buyAmount);
     await getTokensForETH(bodingContract, buyAmount);
 
