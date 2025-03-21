@@ -1,7 +1,5 @@
 {
-    "controller": "0xC7CbC969e2c24596d38f6346e0672a2c0a5A2083",
-    "agentTokenAddr": "0x191d4EF462867B7Ee8D9DA0a9Bf011c107e63CC7",
-    "bondingAddr": "0xeAAc1867385753Fe16e1e5Ac9013EDd2469d5167",
-    "chainID": "421614",
-    "rpc": "https://arbitrum-sepolia-rpc.publicnode.com"
+    "controller": "0x6aF8015d2798Ec47446cc6710732830Af5388e14",
+    "chainID": "97",
+    "rpc": "https://data-seed-prebsc-1-s3.binance.org:8545/"
 }
