@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 import "./AiAgentToken.sol";
 import "./BondingCurve.sol";
 contract Controller is Ownable {
+    mapping(address => address) private _tokens;
     mapping(address => address) private _bondings;
     uint256 public FEE = 0.1 ether;
     address public FEE_RECEIVER;
@@ -31,7 +32,6 @@ contract Controller is Ownable {
         string memory symbol,
         address stakingWallet,
         uint256 totalSupply,
-        uint256 initPrice //TODO remove
     ) public payable returns (address) {
         _payFee();
         AiAgentToken agentToken = new AiAgentToken(
@@ -48,6 +48,7 @@ contract Controller is Ownable {
             address(this),
             bondingSupply
         );
+        _tokens[msg.sender] = address(agentToken);
         _bondings[address(agentToken)] = address(newBondingCurve);
 
         //  auto buy when use create and send token >fee
@@ -92,6 +93,9 @@ contract Controller is Ownable {
 
     function transferAdmin(address newAdmin) public onlyOwner {
         transferOwnership(newAdmin);
+    }
+    function getTokenByOwner(address owner) public view returns (address) { //TODO: REMOVE later, use for dev contract test.
+        return _tokens[owner];
     }
 
     function getBondingByToken(address token) public view returns (address) {
