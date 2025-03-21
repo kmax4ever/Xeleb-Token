@@ -48,14 +48,22 @@ contract BondingCurve is BancorFormula, Ownable, ReentrancyGuard {
     event TokensPurchased(
         address indexed buyer,
         uint256 ethAmount,
-        uint256 tokenAmount
+        uint256 tokenAmount,
+        uint256 timestamp
     );
     event TokensSold(
         address indexed seller,
         uint256 tokenAmount,
-        uint256 ethAmount
+        uint256 ethAmount,
+        uint256 timestamp
     );
-    event PriceUpdate(uint256 newPrice);
+
+    event Trade(
+        address indexed trader,
+        uint256 amount,
+        uint256 price,
+        uint256 timestamp
+    );
 
     constructor(
         address _token,
@@ -97,7 +105,14 @@ contract BondingCurve is BancorFormula, Ownable, ReentrancyGuard {
         agentToken.burn(msg.sender, burnAmount);
 
         lastTradeTime[msg.sender] = block.timestamp;
-        emit TokensPurchased(msg.sender, msg.value, tokenAmount);
+        emit TokensPurchased(
+            msg.sender,
+            msg.value,
+            tokenAmount,
+            block.timestamp
+        );
+
+        emit Trade(msg.sender, tokenAmount, msg.value, block.timestamp);
     }
 
     // Sell tokens for ETH
@@ -131,7 +146,8 @@ contract BondingCurve is BancorFormula, Ownable, ReentrancyGuard {
         lastTradeTime[msg.sender] = block.timestamp;
         totalSoldAmount -= tokenAmount;
 
-        emit TokensSold(msg.sender, tokenAmount, refundAmount);
+        emit TokensSold(msg.sender, tokenAmount, refundAmount, block.timestamp);
+        emit Trade(msg.sender, tokenAmount, refundAmount, block.timestamp);
     }
 
     function getTokensForETH(uint256 _ethAmount) public view returns (uint256) {

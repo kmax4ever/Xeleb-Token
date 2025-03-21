@@ -29,7 +29,6 @@ async function main() {
       newToken.symbol,
       config.WALLET.STAKING,
       toWei(newToken.totalSupply),
-      toWei(newToken.initPrice),
       { value: toWei(0.3) }
     );
 
