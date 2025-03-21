@@ -55,6 +55,7 @@ contract Controller is Ownable {
         uint256 buyAmount = msg.value - FEE;
         if (buyAmount > 0) {
             uint256 tokenAmount = newBondingCurve.getTokensForETH(buyAmount);
+            console.log("tokenAmount", tokenAmount);
             uint256 maxBuy = (totalSupply * MAX_CREATOR_BUY_PERCENT) /
                 DENOMINATOR;
             if (tokenAmount > maxBuy) {

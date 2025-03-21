@@ -3,6 +3,7 @@ const provider = new ethers.JsonRpcProvider(process.env.RPC_ENDPOINT);
 import * as config from "./config.json";
 import {
   etherProvider,
+  fromWei,
   getDetails,
   getTokensForETH,
   getWalletFromPkey,
@@ -29,8 +30,7 @@ async function main() {
       newToken.symbol,
       config.WALLET.STAKING,
       toWei(newToken.totalSupply),
-      toWei(newToken.initPrice),
-      { value: toWei(0.3) }
+      { value: toWei(0.4) }
     );
 
   await tx.wait();
@@ -43,8 +43,6 @@ async function main() {
     "BondingCurve",
     bondingAddr
   );
-  // const weth = await bodingContract.weth2();
-  // console.log({ weth });
 
   //await getDetails(agentTokenAddr, creator.address, "CREATOR");
 
