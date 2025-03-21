@@ -4,8 +4,8 @@
     "symbol": "XCX"
   },
   "NEW_TOKEN": {
-    "name": "Agent01",
-    "symbol": "Agent01",
+    "name": "Agent02",
+    "symbol": "Agent02",
     "totalSupply": 1000000000,
     "marketCap": 10000,
     "transferFee": 100,
@@ -14,7 +14,7 @@
     "initPrice": "0.00000000765"
   },
   "PKEY": {
-    "USER1": "74c793a0410ba3fe10998515febc42692da01b804a16bacfd589441f1105ee2b",
+    "USER1": "0xc526ee95bf44d8fc405a158bb884d9d1238d99f0612e9f33d006bb0789009aaa",
     "USER2": "0xc526ee95bf44d8fc405a158bb884d9d1238d99f0612e9f33d006bb0789009aaa"
   },
   "WALLET": {

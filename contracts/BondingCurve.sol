@@ -67,7 +67,7 @@ contract BondingCurve is Ownable, ReentrancyGuard {
 
         // Calculate slope = (TARGET_PRICE - INITIAL_PRICE) / MAX_SUPPLY
         // For 24 ETH target price and 700M max supply
-        SLOPE = 33285; // Approximately (24e18 - 1e7) / 700M
+        SLOPE = 342857; // ((24e18 - 1e7) * 1e18) / (700M * 1e18)
 
         console.log("SLOPE", SLOPE);
     }
