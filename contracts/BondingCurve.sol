@@ -162,7 +162,7 @@ contract BondingCurve is Ownable, ReentrancyGuard {
             block.timestamp
         );
 
-        emit Trade(msg.sender, tokenAmount, msg.value, block.timestamp);
+        emit Trade(msg.sender, tokenAmount, getCurrentPrice(), block.timestamp);
     }
 
     // Sell tokens for ETH
@@ -197,7 +197,7 @@ contract BondingCurve is Ownable, ReentrancyGuard {
         totalSoldAmount -= tokenAmount;
 
         emit TokensSold(msg.sender, tokenAmount, refundAmount, block.timestamp);
-        emit Trade(msg.sender, tokenAmount, refundAmount, block.timestamp);
+        emit Trade(msg.sender, tokenAmount, getCurrentPrice(), block.timestamp);
     }
 
     // View functions
