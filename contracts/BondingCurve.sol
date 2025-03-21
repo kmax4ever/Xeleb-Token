@@ -15,7 +15,7 @@ contract BondingCurve is BancorFormula, Ownable, ReentrancyGuard {
     // Bonding curve parameters
     uint256 public constant PRICE_DENOMINATOR = 1e18;
     uint256 public INITIAL_PRICE = 0; // Will be set in constructor
-    uint256 public INITIAL_SUPPLY; // 700M tokens
+    uint256 public MAX_SUPPLY; // 700M tokens
 
     uint256 public constant GROWTH_RATE = 2;
 
@@ -43,9 +43,7 @@ contract BondingCurve is BancorFormula, Ownable, ReentrancyGuard {
     // Treasury
     uint256 public constant BONDING_TARGET = 24 ether;
 
-    uint256 public scale = 10 ** 18;
-    uint256 public reserveBalance = 10 * scale;
-    uint32 public reserveRatio = 293502;
+    uint32 public reserveRatio = 253002;
 
     event TokensPurchased(
         address indexed buyer,
@@ -66,8 +64,8 @@ contract BondingCurve is BancorFormula, Ownable, ReentrancyGuard {
     ) Ownable(initialOwner) {
         require(_token != address(0), "Invalid token address");
         agentToken = AiAgentToken(_token);
-        INITIAL_SUPPLY = initSupply;
-        INITIAL_PRICE = (BONDING_TARGET * PRICE_DENOMINATOR) / INITIAL_SUPPLY;
+        MAX_SUPPLY = initSupply;
+        INITIAL_PRICE = (BONDING_TARGET * PRICE_DENOMINATOR) / MAX_SUPPLY;
         console.log("INITIAL_PRICE", INITIAL_PRICE);
     }
 
@@ -86,7 +84,7 @@ contract BondingCurve is BancorFormula, Ownable, ReentrancyGuard {
         uint256 tokenAmount = getTokensForETH(msg.value);
         //require(tokenAmount <= MAX_BUY_AMOUNT, "Exceeds max buy");
         require(
-            totalSoldAmount + tokenAmount <= INITIAL_SUPPLY,
+            totalSoldAmount + tokenAmount <= MAX_SUPPLY,
             "Exceeds available supply"
         );
 
@@ -140,26 +138,34 @@ contract BondingCurve is BancorFormula, Ownable, ReentrancyGuard {
         if (totalSoldAmount == 0) {
             return INITIAL_PRICE * _ethAmount;
         } else {
-            return
-                calculatePurchaseReturn(
-                    INITIAL_SUPPLY,
-                    address(this).balance,
-                    uint32(reserveRatio),
-                    _ethAmount
-                );
+            uint256 tokenAmount = calculatePurchaseReturn(
+                MAX_SUPPLY,
+                address(this).balance,
+                uint32(reserveRatio),
+                _ethAmount
+            );
+            // for sure not over MAX_SUPPLY
+            if (totalSoldAmount + tokenAmount > MAX_SUPPLY) {
+                tokenAmount = MAX_SUPPLY - totalSoldAmount;
+            }
+            return tokenAmount;
         }
     }
 
     function getETHForTokens(
         uint256 tokenAmount
     ) public view returns (uint256) {
-        return
-            calculateSaleReturn(
-                INITIAL_SUPPLY,
-                address(this).balance,
-                uint32(reserveRatio),
-                tokenAmount
-            );
+        uint256 ethAmount = calculateSaleReturn(
+            MAX_SUPPLY,
+            address(this).balance,
+            uint32(reserveRatio),
+            tokenAmount
+        );
+        // for sure not over balance
+        if (address(this).balance < ethAmount) {
+            ethAmount = address(this).balance;
+        }
+        return ethAmount;
     }
 
     // Emergency functions
