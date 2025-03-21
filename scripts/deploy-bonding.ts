@@ -212,7 +212,7 @@ async function main() {
   // return;
 
   await balanceOf(tokenAddr, bondingAddr, "BONDING");
-  const user1 = getWalletFromPkey(config.PKEY.USER1);
+  const user1 = getWalletFromPkey(process.env.CREATOR_KEY);
   const isAdmin = await token.isAdmin(bondingAddr);
   console.log({ isAdmin });
 

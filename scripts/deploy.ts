@@ -66,6 +66,8 @@ async function main() {
       controller: await factory.getAddress(),
       chainID: process.env.CHAIN_ID,
       rpc: process.env.RPC_ENDPOINT,
+      agentTokenAddr: "",
+      bondingAddr: "",
     };
     var fs = require("fs");
     fs.writeFileSync(
