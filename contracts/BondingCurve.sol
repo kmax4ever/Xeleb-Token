@@ -112,7 +112,7 @@ contract BondingCurve is BancorFormula, Ownable, ReentrancyGuard {
             block.timestamp
         );
 
-        emit Trade(msg.sender, tokenAmount, msg.value, block.timestamp);
+        emit Trade(msg.sender, tokenAmount, getCurrentPrice(), block.timestamp);
     }
 
     // Sell tokens for ETH
@@ -147,7 +147,7 @@ contract BondingCurve is BancorFormula, Ownable, ReentrancyGuard {
         totalSoldAmount -= tokenAmount;
 
         emit TokensSold(msg.sender, tokenAmount, refundAmount, block.timestamp);
-        emit Trade(msg.sender, tokenAmount, refundAmount, block.timestamp);
+        emit Trade(msg.sender, tokenAmount, getCurrentPrice(), block.timestamp);
     }
 
     function getTokensForETH(uint256 _ethAmount) public view returns (uint256) {

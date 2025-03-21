@@ -1,7 +1,7 @@
 {
-    "controller": "0xf9A454611d37182C30763Bf585447290Dc74B9dF",
-    "agentTokenAddr": "0x5f140B72480280c1e51991124Be4263C8f6fe3e3",
-    "bondingAddr": "0xD50b795A27efBb98BeaB6E7382dD47a0C09104ec",
+    "controller": "0xC7CbC969e2c24596d38f6346e0672a2c0a5A2083",
+    "agentTokenAddr": "0x191d4EF462867B7Ee8D9DA0a9Bf011c107e63CC7",
+    "bondingAddr": "0xeAAc1867385753Fe16e1e5Ac9013EDd2469d5167",
     "chainID": "421614",
     "rpc": "https://arbitrum-sepolia-rpc.publicnode.com"
 }
