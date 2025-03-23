@@ -14,6 +14,7 @@ contract BondingCurve is Ownable, ReentrancyGuard {
 
     // Bonding curve parameters
     uint256 public constant PRICE_DENOMINATOR = 1e18;
+    uint256 public constant PRICE_SCALING_FACTOR = 338554e21;
     uint256 public MAX_SUPPLY; // 700M tokens
     uint256 public constant BONDING_TARGET = 24e18; // 24 ETH target price
     uint256 public constant INITIAL_PRICE = 765e7; // 0.00000000765 ETH initial price
@@ -28,11 +29,15 @@ contract BondingCurve is Ownable, ReentrancyGuard {
     uint256 public constant MAX_BUY_AMOUNT = 1_000_000_000 * 1e18; // 1M tokens per transaction
     uint256 public constant MAX_SELL_AMOUNT = 1_000_000_000 * 1e18; // 1M tokens per transaction
 
+    //LIQUID
+    address public constant PANCAKESWAP_ROUTER_V2 =
+        0xD99D1c33F9fC3444f8101754aBC46c52416550D1;
+
     // Time-based restrictions
     uint256 public constant TRADE_COOLDOWN = 0;
     mapping(address => uint256) public lastTradeTime;
     uint256 public totalSoldAmount = 0;
-
+    uint256 public totalRaisedAmount = 0;
     event TokensPurchased(
         address indexed buyer,
         uint256 ethAmount,
@@ -78,7 +83,6 @@ contract BondingCurve is Ownable, ReentrancyGuard {
         if (totalSoldAmount == 0) {
             return INITIAL_PRICE;
         }
-
         // Linear curve formula: P = m⋅S + b
         // Where:
         // P = Current price
@@ -90,10 +94,11 @@ contract BondingCurve is Ownable, ReentrancyGuard {
 
         // Calculate price using linear curve formula
         // P = m⋅S + b
-        // Adjust supply for decimals since totalSoldAmount includes 1e18
-        UD60x18 currentPrice = SLOPE.mul(currentSupply.div(ud(1e18))).add(
-            initialPrice
-        );
+        // totalSoldAmount is already in wei, so we need to divide by 1e18 to get actual supply
+        UD60x18 currentPrice = SLOPE
+            .mul(currentSupply.div(ud(PRICE_DENOMINATOR)))
+            .add(initialPrice)
+            .div(ud(PRICE_SCALING_FACTOR));
         return currentPrice.unwrap();
     }
 
@@ -139,8 +144,8 @@ contract BondingCurve is Ownable, ReentrancyGuard {
     ) public view returns (uint256) {
         uint256 ethAmount = calculateSaleReturn(tokenAmount);
         // for sure not over balance
-        if (address(this).balance < ethAmount) {
-            ethAmount = address(this).balance;
+        if (totalRaisedAmount < ethAmount) {
+            ethAmount = totalRaisedAmount;
         }
         return ethAmount;
     }
@@ -167,6 +172,7 @@ contract BondingCurve is Ownable, ReentrancyGuard {
         agentToken.createVestingScheduleForBuyer(msg.sender, remainingAmount);
 
         totalSoldAmount = totalSoldAmount.add(tokenAmount);
+        totalRaisedAmount = totalRaisedAmount.add(msg.value);
         agentToken.burn(msg.sender, burnAmount);
 
         lastTradeTime[msg.sender] = block.timestamp;
@@ -210,6 +216,7 @@ contract BondingCurve is Ownable, ReentrancyGuard {
 
         lastTradeTime[msg.sender] = block.timestamp;
         totalSoldAmount = totalSoldAmount.sub(tokenAmount);
+        totalRaisedAmount = totalRaisedAmount.sub(refundAmount);
 
         emit TokensSold(msg.sender, tokenAmount, refundAmount, block.timestamp);
         emit Trade(msg.sender, tokenAmount, getCurrentPrice(), block.timestamp);
@@ -217,7 +224,7 @@ contract BondingCurve is Ownable, ReentrancyGuard {
 
     // View functions
     function getRaisedAmount() public view returns (uint256) {
-        return address(this).balance;
+        return totalRaisedAmount;
     }
 
     function getTotalSoldAmount() public view returns (uint256) {
