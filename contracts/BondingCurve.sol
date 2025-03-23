@@ -62,44 +62,53 @@ contract BondingCurve is Ownable, ReentrancyGuard {
         require(initSupply > 0, "Invalid supply");
         agentToken = AiAgentToken(_token);
         MAX_SUPPLY = initSupply;
-Ç
+
         UD60x18 targetPrice = ud(BONDING_TARGET);
         UD60x18 initialPrice = ud(INITIAL_PRICE);
-        UD60x18 maxSupply = ud(MAX_SUPPLY);
+        UD60x18 maxSupply = ud(initSupply);
 
-Ç
         SLOPE = targetPrice.sub(initialPrice).div(maxSupply);
-
+        console.log("SLOPE", SLOPE.unwrap());
         console.log("INITIAL_PRICE", INITIAL_PRICE);
         console.log("MAX_SUPPLY", MAX_SUPPLY);
         console.log("BONDING_TARGET", BONDING_TARGET);
     }
 
     function getCurrentPrice() public view returns (uint256) {
-
         if (totalSoldAmount == 0) {
             return INITIAL_PRICE;
         }
 
+        // Linear curve formula: P = m⋅S + b
+        // Where:
+        // P = Current price
+        // m = SLOPE
+        // S = totalSoldAmount (in wei)
+        // b = INITIAL_PRICE
         UD60x18 currentSupply = ud(totalSoldAmount);
         UD60x18 initialPrice = ud(INITIAL_PRICE);
 
-        UD60x18 price = SLOPE.mul(currentSupply).add(initialPrice);
-        return price.unwrap();
+        // Calculate price using linear curve formula
+        // P = m⋅S + b
+        // Adjust supply for decimals since totalSoldAmount includes 1e18
+        UD60x18 currentPrice = SLOPE.mul(currentSupply.div(ud(1e18))).add(
+            initialPrice
+        );
+        return currentPrice.unwrap();
     }
 
     function calculatePurchaseReturn(
         uint256 _ethAmount
     ) public view returns (uint256) {
         uint256 price = getCurrentPrice();
+        console.log("calculatePurchaseReturn PRICE", price);
         require(price > 0, "Invalid price");
 
-
+        // Calculate tokens: tokenAmount = ethAmount / price
+        // We need to adjust for decimals since price is in wei
         UD60x18 ethAmount = ud(_ethAmount);
         UD60x18 currentPrice = ud(price);
-        UD60x18 tokenAmount = ethAmount.mul(ud(PRICE_DENOMINATOR)).div(
-            currentPrice
-        );
+        UD60x18 tokenAmount = ethAmount.div(currentPrice);
         return tokenAmount.unwrap();
     }
 
