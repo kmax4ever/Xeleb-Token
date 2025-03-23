@@ -61,7 +61,6 @@ contract Controller is Ownable {
             if (tokenAmount > maxBuy) {
                 tokenAmount = maxBuy;
             }
-            newBondingCurve.increaseTotalSold(tokenAmount);
             newBondingCurve.creatorBuyEvent(msg.sender, buyAmount, tokenAmount);
             agentToken.createVestingScheduleForCreator(msg.sender, tokenAmount);
             payable(address(newBondingCurve)).transfer(buyAmount);

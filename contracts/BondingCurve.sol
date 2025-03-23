@@ -209,10 +209,6 @@ contract BondingCurve is Ownable, ReentrancyGuard {
         return totalSoldAmount;
     }
 
-    function increaseTotalSold(uint256 amout) external onlyOwner {
-        totalSoldAmount += amout;
-    }
-
     function creatorBuyEvent(
         address buyer,
         uint256 ethValue,
