@@ -119,6 +119,7 @@ export const raiseAamount = async (bodingContract: any) => {
   const raisedAmount = await bodingContract.getRaisedAmount();
   console.log({ raisedAmount: +fromWei(raisedAmount) });
   //console.log({ balance: +fromWei(balance) });
+  return +fromWei(raisedAmount);
 };
 
 export const getTotalSoldAmount = async (bodingContract: any) => {

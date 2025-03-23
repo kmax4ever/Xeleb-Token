@@ -230,30 +230,31 @@ async function main() {
   await raiseAamount(bodingContract);
   await getTotalSoldAmount(bodingContract);
 
-  let totalRaiseAamount = +(await raiseAamount(bodingContract));
   let isContinue = true;
   const sellAmount = 5000000;
   await getTokensForETH(bodingContract, 23.7);
 
   while (isContinue) {
-    let buyAmount = randomInt(1, 10) / 100;
+    let buyAmount = randomInt(1, 10) / 10;
+    let totalRaiseAamount = +(await raiseAamount(bodingContract));
     if (buyAmount + totalRaiseAamount > 24) {
-      console.log("xxxxxxxxxxxxxxxxxx");
-
+      console.log("xxxxxxxx BUY AMOUNT xxxxxxxxxx");
       buyAmount = 24 - totalRaiseAamount;
     }
+    totalRaiseAamount += buyAmount;
     const currentPrice = await bodingContract.getCurrentPrice();
     console.log({ currentPrice: +fromWei(currentPrice) });
     await buyFunc(bodingContract, user1, token, buyAmount);
     await getEthForToken(bodingContract, sellAmount);
     console.log("xxxxxxxxxxxxxxxxxx");
     await getTokensForETH(bodingContract, 0.1);
-    totalRaiseAamount += buyAmount;
 
     if (totalRaiseAamount >= 24) {
       isContinue = false;
     }
   }
+
+  return;
   let totalSoldAount = await getTotalSoldAmount(bodingContract);
 
   let isSellContinue = true;

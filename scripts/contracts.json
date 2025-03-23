@@ -1,7 +1,7 @@
 {
-  "controller": "0x34bE26F495B49582129Ad3803252a27E0442Bf12",
-  "chainID": "97",
-  "rpc": "https://data-seed-prebsc-1-s3.binance.org:8545/",
-  "agentTokenAddr": "0x3F11Aa6cb4998F845e1C56E5aF86FE36811cd4a8",
-  "bondingAddr": "0x2FB00ca0b2543739Ede57d15e7526dD807db05Dd"
+    "controller": "0xD8a5a9b31c3C0232E196d518E89Fd8bF83AcAd43",
+    "agentTokenAddr": "0x285BcEFFE7558b6c73Cb0632dA1497D81A2810eE",
+    "bondingAddr": "0xb8597CAebAea9a57f33b78bA26b12b4b3C6ae0cE",
+    "chainID": "1337",
+    "rpc": "http://127.0.0.1:8545/"
 }
