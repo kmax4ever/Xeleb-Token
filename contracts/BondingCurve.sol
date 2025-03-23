@@ -8,9 +8,14 @@ import "./AiAgentToken.sol";
 import "hardhat/console.sol";
 import "./lib/SafeMath.sol";
 import {UD60x18, ud} from "@prb/math/src/UD60x18.sol";
+import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
 contract BondingCurve is Ownable, ReentrancyGuard {
     using SafeMath for uint256;
     AiAgentToken public agentToken;
+
+    // PancakeSwap interfaces
+    IUniswapV2Router01 public immutable pancakeSwapRouter;
+    address public pair;
 
     // Bonding curve parameters
     uint256 public constant PRICE_DENOMINATOR = 1e18;
@@ -28,9 +33,7 @@ contract BondingCurve is Ownable, ReentrancyGuard {
     // Trading limits
     uint256 public constant MAX_BUY_AMOUNT = 1_000_000_000 * 1e18; // 1M tokens per transaction
     uint256 public constant MAX_SELL_AMOUNT = 1_000_000_000 * 1e18; // 1M tokens per transaction
-
-    //LIQUID
-    address public constant PANCAKESWAP_ROUTER_V2 =
+    address public constant PANCAKE_SWAP_ROUTER_V2 =
         0xD99D1c33F9fC3444f8101754aBC46c52416550D1;
 
     // Time-based restrictions
@@ -38,6 +41,14 @@ contract BondingCurve is Ownable, ReentrancyGuard {
     mapping(address => uint256) public lastTradeTime;
     uint256 public totalSoldAmount = 0;
     uint256 public totalRaisedAmount = 0;
+
+    event LiquidityAdded(
+        address indexed provider,
+        uint256 tokenAmount,
+        uint256 ethAmount,
+        uint256 timestamp
+    );
+
     event TokensPurchased(
         address indexed buyer,
         uint256 ethAmount,
@@ -67,6 +78,7 @@ contract BondingCurve is Ownable, ReentrancyGuard {
         require(initSupply > 0, "Invalid supply");
         agentToken = AiAgentToken(_token);
         MAX_SUPPLY = initSupply;
+        pancakeSwapRouter = IUniswapV2Router01(PANCAKE_SWAP_ROUTER_V2);
 
         UD60x18 targetPrice = ud(BONDING_TARGET);
         UD60x18 initialPrice = ud(INITIAL_PRICE);
@@ -243,4 +255,36 @@ contract BondingCurve is Ownable, ReentrancyGuard {
     // Emergency functions
     receive() external payable {}
     fallback() external payable {}
+
+    // Add liquidity to PancakeSwap
+    function addLiquidity() external payable {
+        // Approve router to spend tokens
+        // require(
+        //     totalRaisedAmount >= BONDING_TARGET,
+        //     "Not enought bonding target!"
+        // );
+        uint256 tokenAmount = agentToken.balanceOf(address(this));
+        uint256 nativeBalance = address(this).balance;
+        agentToken.approve(address(pancakeSwapRouter), tokenAmount);
+        // Add liquidity to PancakeSwap
+        (
+            uint256 amountToken,
+            uint256 amountETH,
+            uint256 liquidity
+        ) = pancakeSwapRouter.addLiquidityETH{value: nativeBalance}(
+                address(agentToken),
+                tokenAmount,
+                0, // Accept any amount of tokens
+                nativeBalance, // Accept any amount of ETH
+                msg.sender,
+                block.timestamp
+            );
+
+        emit LiquidityAdded(
+            msg.sender,
+            amountToken,
+            amountETH,
+            block.timestamp
+        );
+    }
 }

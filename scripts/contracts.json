@@ -1,5 +1,7 @@
 {
-    "controller": "0xF855E18b57EF331967bFe2bd3077fFeb52c8fC46",
+    "controller": "0x6779DA793Af356246570919F47d62a12025Dba49",
+    "agentTokenAddr": "",
+    "bondingAddr": "",
     "chainID": "97",
     "rpc": "https://data-seed-prebsc-1-s3.binance.org:8545/"
 }

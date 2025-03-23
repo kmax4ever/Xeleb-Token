@@ -211,6 +211,8 @@ async function main() {
 
   // return;
 
+  await getTokensForETH(bodingContract, 24);
+
   await balanceOf(tokenAddr, bondingAddr, "BONDING");
   const user1 = getWalletFromPkey(process.env.CREATOR_KEY);
   const isAdmin = await token.isAdmin(bondingAddr);
@@ -232,7 +234,7 @@ async function main() {
 
   let totalRaiseAamount = await raiseAamount(bodingContract);
   let isContinue = true;
-  const sellAmount = 5000000;
+  const sellAmount = 50000000;
   await getTokensForETH(bodingContract, 23.7);
   while (isContinue) {
     let buyAmount = randomInt(1, 10) / (+process.env.PERCENT | 10);
@@ -257,6 +259,8 @@ async function main() {
       isContinue = false;
     }
   }
+
+  return;
   let totalSoldAount = await getTotalSoldAmount(bodingContract);
 
   let isSellContinue = true;
@@ -264,6 +268,7 @@ async function main() {
     await sellFunc(bodingContract, user1, token, sellAmount);
     await getTokensForETH(bodingContract, 0.1);
     await getEthForToken(bodingContract, sellAmount);
+    await raiseAamount(bodingContract);
     totalSoldAount -= sellAmount;
 
     if (totalSoldAount < sellAmount) {
