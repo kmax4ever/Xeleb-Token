@@ -194,9 +194,7 @@ contract BondingCurve is BancorFormula, Ownable, ReentrancyGuard {
     function getTotalSoldAmount() public view returns (uint256) {
         return totalSoldAmount;
     }
-    function increaseTotalSold(uint256 amout) external onlyOwner {
-        totalSoldAmount += amout;
-    }
+
     function getCurrentPrice() public view returns (uint256) {
         uint256 ethAmount = 1e10;
         uint256 tokenAmount = getTokensForETH(ethAmount);
