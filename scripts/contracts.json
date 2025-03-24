@@ -1,7 +1,7 @@
 {
-    "controller": "0xfbC22278A96299D91d41C453234d97b4F5Eb9B2d",
-    "agentTokenAddr": "0x782df4e02589470f7052428C9C879592FD4b0290",
-    "bondingAddr": "0xba979C261A37bA18b70087928677A54CDba9e8d1",
+    "controller": "0xF32D39ff9f6Aa7a7A64d7a4F00a54826Ef791a55",
+    "agentTokenAddr": "0x870a882f72Bff80B7dd407C2545b40478D273361",
+    "bondingAddr": "0xfE336b261c7ceCC49629373Dab961Bbe400F71EA",
     "chainID": "1337",
     "rpc": "http://127.0.0.1:8545/"
 }

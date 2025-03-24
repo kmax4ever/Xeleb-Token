@@ -5,7 +5,7 @@ import "./BondingCurve.sol";
 contract Controller is Ownable {
     mapping(address => address) private _tokens;
     mapping(address => address) private _bondings;
-    uint256 public FEE = 0.1 ether;
+    uint256 public FEE = 0.001 ether;
     address public FEE_RECEIVER;
     uint256 private MAX_CREATOR_BUY_PERCENT = 500; // 5%;
     uint256 public constant BONDING_PERCENT = 7000;

@@ -39,6 +39,7 @@
     "deploy-bsc": "env-cmd -f .env npx hardhat compile && npx hardhat run scripts/deploy.ts && npx hardhat run scripts/deploy-testnet-bsc.ts",
     "compile": "npx hardhat compile",
     "start-node": "npx hardhat node",
-    "test": "npx hardhat test test/Test.ts"
+    "test": "npx hardhat test test/Test.ts",
+    "deploy-test": "env-cmd -f .env npx hardhat compile && npx hardhat run scripts/deploy-test.ts --network deploy"
   }
 }
