@@ -11,7 +11,7 @@ contract AiAgentToken is Ownable {
     uint256 public totalSupply;
 
     mapping(address => bool) private _admins;
-    uint256 private holders;
+    uint32 private holders;
 
     // Token distribution pools
     uint256 public constant BONDING_CURVE_PERCENT = 70; // 75% of total supply
