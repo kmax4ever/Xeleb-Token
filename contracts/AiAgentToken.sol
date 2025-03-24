@@ -11,6 +11,7 @@ contract AiAgentToken is Ownable {
     uint256 public totalSupply;
 
     mapping(address => bool) private _admins;
+    uint256 private holders;
 
     // Token distribution pools
     uint256 public constant BONDING_CURVE_PERCENT = 70; // 75% of total supply
@@ -146,9 +147,7 @@ contract AiAgentToken is Ownable {
 
         uint256 unlockAmount = (amount * unlockPercent) / 100;
         uint256 vestingAmount = (amount * vestingPercent) / 100;
-
-        _balances[account] += unlockAmount;
-        emit Transfer(address(this), account, unlockAmount);
+        _mint(account, unlockAmount);
 
         VestingSchedule storage existingSchedule = vestingSchedules[account];
         if (existingSchedule.totalAmount > 0) {
@@ -323,9 +322,14 @@ contract AiAgentToken is Ownable {
     }
     function _mint(address account, uint256 amount) private {
         require(account != address(0), "ERC20: mint to the zero address");
+        uint256 balanceBeforeMint = _balances[account];
         unchecked {
             _balances[account] += amount;
         }
+        if (balanceBeforeMint == 0 && _balances[account] > 0) {
+            holders++;
+        }
+
         emit Transfer(address(0), account, amount);
     }
 
@@ -342,6 +346,13 @@ contract AiAgentToken is Ownable {
 
         unchecked {
             _balances[account] = actualBalance - amount;
+            if (
+                _balances[account] == 0 &&
+                vestingSchedules[account].releasedAmount ==
+                vestingSchedules[account].totalAmount
+            ) {
+                holders--;
+            }
         }
         emit Transfer(account, address(0), amount);
     }
@@ -365,10 +376,22 @@ contract AiAgentToken is Ownable {
             _claimVestedTokens(from, needFromVesting);
             actualBalance = _balances[from];
         }
+        uint256 balanceOfToBeforeTransfer = _balances[to];
 
         unchecked {
             _balances[from] = actualBalance - amount;
             _balances[to] += amount;
+
+            if (
+                _balances[from] == 0 &&
+                vestingSchedules[from].releasedAmount ==
+                vestingSchedules[from].totalAmount
+            ) {
+                holders--;
+            }
+            if (balanceOfToBeforeTransfer == 0 && _balances[to] > 0) {
+                holders++;
+            }
         }
 
         emit Transfer(from, to, amount);
@@ -420,5 +443,9 @@ contract AiAgentToken is Ownable {
         address account
     ) public view returns (VestingSchedule memory schedule) {
         schedule = vestingSchedules[account];
+    }
+
+    function getHolderCount() public view returns (uint256) {
+        return holders;
     }
 }
