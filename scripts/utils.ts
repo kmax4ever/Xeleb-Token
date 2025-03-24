@@ -160,7 +160,7 @@ export const buyFunc = async (
     nonce: await provider.getTransactionCount(user.address, "latest"),
   });
 
-  const bondingAddr = await bodingContract.getAddress();
+  //const bondingAddr = await bodingContract.getAddress();
 
   await delay(1);
   //await mine(10);
