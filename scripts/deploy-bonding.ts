@@ -238,6 +238,9 @@ async function main() {
   await getTokensForETH(bodingContract, 23);
   console.log("====================================");
 
+  const count = await token.getHolderCount();
+  console.log({ count: +count.toString() });
+
   while (isContinue) {
     let buyAmount = randomInt(1, 10) / (+process.env.PERCENT | 10);
     if (buyAmount + totalRaiseAamount > 24) {
@@ -250,6 +253,9 @@ async function main() {
     console.log({ currentPrice: +fromWei(currentPrice) });
 
     await buyFunc(bodingContract, user1, token, buyAmount);
+    const count = await token.getHolderCount();
+    console.log({ count: +count.toString() });
+
     await getTokensForETH(bodingContract, buyAmount);
 
     await getEthForToken(bodingContract, sellAmount);
