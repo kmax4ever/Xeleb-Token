@@ -107,10 +107,9 @@ contract BondingCurve is Ownable, ReentrancyGuard {
         // Calculate price using linear curve formula
         // P = m⋅S + b
         // totalSoldAmount is already in wei, so we need to divide by 1e18 to get actual supply
-        UD60x18 currentPrice = SLOPE
-            .mul(currentSupply.div(ud(PRICE_DENOMINATOR)))
-            .add(initialPrice)
-            .div(ud(PRICE_SCALING_FACTOR));
+        UD60x18 currentPrice = SLOPE.mul(currentSupply).add(initialPrice).div(
+            ud(PRICE_SCALING_FACTOR)
+        );
         return currentPrice.unwrap();
     }
 
