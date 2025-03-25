@@ -245,14 +245,22 @@ async function main() {
     let buyAmount = randomInt(1, 10) / (+process.env.PERCENT | 10);
     if (buyAmount + totalRaiseAamount > 24) {
       console.log("xxxxxxxxxxxxxxxxxx");
-
       buyAmount = 24 - totalRaiseAamount;
+
+      const tokenReceive = await getTokensForETH(
+        bodingContract,
+        +buyAmount.toFixed(5)
+      );
+
+      console.log("------------------------------------");
+      console.log({ tokenReceive: +fromWei(tokenReceive) });
+      console.log("------------------------------------");
     }
 
     const currentPrice = await bodingContract.getCurrentPrice();
     console.log({ currentPrice: +fromWei(currentPrice) });
 
-    await buyFunc(bodingContract, user1, token, buyAmount);
+    await buyFunc(bodingContract, user1, token, +buyAmount.toFixed(5));
     const count = await token.getHolderCount();
     console.log({ count: +count.toString() });
 

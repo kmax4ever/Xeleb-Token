@@ -10,7 +10,7 @@ contract BondingTest {
     // Constants with increased precision
     uint256 public constant INITIAL_PRICE = 765e7; // 0.00000000765 ETH
     uint256 public constant MAX_SUPPLY = 700_000_000e18; // 700M tokens
-    uint256 public constant PRICE_SCALING_FACTOR = 348999e21; // Increased from 1e25 for more precision
+    uint256 public constant PRICE_SCALING_FACTOR = 347999e21; // Increased from 1e25 for more precision
     uint256 public constant BONDING_TARGET = 24e18; // 24 ETH
     UD60x18 public SLOPE;
     uint256 public totalSoldAmount;

@@ -6,48 +6,46 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./AiAgentToken.sol";
 import "hardhat/console.sol";
-import "./lib/SafeMath.sol";
-import {UD60x18, ud} from "@prb/math/src/UD60x18.sol";
+import "./lib/BancorFormula.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
-contract BondingCurve is Ownable, ReentrancyGuard {
+contract BondingCurve is BancorFormula, Ownable, ReentrancyGuard {
+    using Math for uint256;
     using SafeMath for uint256;
     AiAgentToken public agentToken;
 
-    // PancakeSwap interfaces
     IUniswapV2Router01 public immutable pancakeSwapRouter;
-    address public pair;
 
     // Bonding curve parameters
-    uint256 public constant PRICE_DENOMINATOR = 1e18;
-    uint256 public constant PRICE_SCALING_FACTOR = 348999e21;
-    uint256 public MAX_SUPPLY; // 700M tokens
-    uint256 public constant BONDING_TARGET = 24e18; // 24 ETH target price
     uint256 public constant INITIAL_PRICE = 765e7; // 0.00000000765 ETH initial price
-    UD60x18 public SLOPE; // Slope of the linear curve
+    uint256 public MAX_SUPPLY; // 700M tokens
 
     // Trading fees
-    uint256 public constant FEE_PERCENT = 10; // 1%
-    uint256 public constant BURN_PERCENT = 10; // 1%
-    uint256 public constant DENOMINATOR = 1000;
-
+    uint256 public constant BURN_PERCENT = 100; // 1%
+    // max buy percent
+    uint256 public MAX_BUY_PERCENT = 1000;
+    uint256 public DENOMINATOR = 10000;
+    uint256 private MAX_BUY_AMOUNT;
     // Trading limits
-    uint256 public constant MAX_BUY_AMOUNT = 1_000_000_000 * 1e18; // 1M tokens per transaction
-    uint256 public constant MAX_SELL_AMOUNT = 1_000_000_000 * 1e18; // 1M tokens per transaction
-    address public constant PANCAKE_SWAP_ROUTER_V2 =
-        0xD99D1c33F9fC3444f8101754aBC46c52416550D1;
+    uint256 public constant MAX_SELL_AMOUNT = 1000000000 * 1e18; //  tokens
+
+    // lock , vesting config
+    uint256 public constant BUY_UNLOCK_PERCENT = 1000; // 1%
+    uint256 public constant VESTING_PERCENT = 9000; //0.1%
 
     // Time-based restrictions
     uint256 public constant TRADE_COOLDOWN = 0;
     mapping(address => uint256) public lastTradeTime;
     uint256 public totalSoldAmount = 0;
     uint256 public totalRaisedAmount = 0;
+    // Treasury
+    uint256 public constant BONDING_TARGET = 24e18;
 
-    event LiquidityAdded(
-        address indexed provider,
-        uint256 tokenAmount,
-        uint256 ethAmount,
-        uint256 timestamp
-    );
+    uint32 public reserveRatio = 655000;
+
+    bool public isRunBonding = true;
+
+    address public constant PANCAKE_SWAP_ROUTER_V2 =
+        0xD99D1c33F9fC3444f8101754aBC46c52416550D1;
 
     event TokensPurchased(
         address indexed buyer,
@@ -69,121 +67,63 @@ contract BondingCurve is Ownable, ReentrancyGuard {
         uint256 timestamp
     );
 
+    event LiquidityAdded(
+        address indexed provider,
+        uint256 tokenAmount,
+        uint256 ethAmount,
+        uint256 timestamp
+    );
+
     constructor(
         address _token,
         address initialOwner,
         uint256 initSupply
     ) Ownable(initialOwner) {
         require(_token != address(0), "Invalid token address");
-        require(initSupply > 0, "Invalid supply");
         agentToken = AiAgentToken(_token);
         MAX_SUPPLY = initSupply;
+        MAX_BUY_AMOUNT = (initSupply * MAX_BUY_PERCENT) / DENOMINATOR;
         pancakeSwapRouter = IUniswapV2Router01(PANCAKE_SWAP_ROUTER_V2);
-
-        UD60x18 targetPrice = ud(BONDING_TARGET);
-        UD60x18 initialPrice = ud(INITIAL_PRICE);
-        UD60x18 maxSupply = ud(initSupply);
-
-        SLOPE = targetPrice.sub(initialPrice).div(maxSupply);
-        console.log("SLOPE", SLOPE.unwrap());
-        console.log("INITIAL_PRICE", INITIAL_PRICE);
-        console.log("MAX_SUPPLY", MAX_SUPPLY);
-        console.log("BONDING_TARGET", BONDING_TARGET);
-    }
-
-    function getCurrentPrice() public view returns (uint256) {
-        if (totalSoldAmount == 0) {
-            return INITIAL_PRICE;
-        }
-        // Linear curve formula: P = m⋅S + b
-        // Where:
-        // P = Current price
-        // m = SLOPE
-        // S = totalSoldAmount (in wei)
-        // b = INITIAL_PRICE
-        UD60x18 currentSupply = ud(totalSoldAmount);
-        UD60x18 initialPrice = ud(INITIAL_PRICE);
-
-        // Calculate price using linear curve formula
-        // P = m⋅S + b
-        // totalSoldAmount is already in wei, so we need to divide by 1e18 to get actual supply
-        UD60x18 currentPrice = SLOPE.mul(currentSupply).add(initialPrice).div(
-            ud(PRICE_SCALING_FACTOR)
-        );
-        return currentPrice.unwrap();
-    }
-
-    function calculatePurchaseReturn(
-        uint256 _ethAmount
-    ) public view returns (uint256) {
-        uint256 price = getCurrentPrice();
-        console.log("calculatePurchaseReturn PRICE", price);
-        require(price > 0, "Invalid price");
-
-        // Calculate tokens: tokenAmount = ethAmount / price
-        // We need to adjust for decimals since price is in wei
-        UD60x18 ethAmount = ud(_ethAmount);
-        UD60x18 currentPrice = ud(price);
-        UD60x18 tokenAmount = ethAmount.div(currentPrice);
-        return tokenAmount.unwrap();
-    }
-
-    function calculateSaleReturn(
-        uint256 tokenAmount
-    ) public view returns (uint256) {
-        uint256 price = getCurrentPrice();
-        require(price > 0, "Invalid price");
-
-        UD60x18 tokens = ud(tokenAmount);
-        UD60x18 currentPrice = ud(price);
-        UD60x18 ethAmount = tokens.mul(currentPrice).div(ud(1e18));
-
-        return ethAmount.unwrap();
-    }
-
-    function getTokensForETH(uint256 _ethAmount) public view returns (uint256) {
-        // for sure not over MAX_SUPPLY
-        uint256 tokenAmount = calculatePurchaseReturn(_ethAmount);
-        if (totalSoldAmount.add(tokenAmount) > MAX_SUPPLY) {
-            tokenAmount = MAX_SUPPLY.sub(totalSoldAmount);
-        }
-        return tokenAmount;
-    }
-
-    function getETHForTokens(
-        uint256 tokenAmount
-    ) public view returns (uint256) {
-        uint256 ethAmount = calculateSaleReturn(tokenAmount);
-        // for sure not over balance
-        if (totalRaisedAmount < ethAmount) {
-            ethAmount = totalRaisedAmount;
-        }
-        return ethAmount;
     }
 
     // Buy tokens with ETH
     function buyTokens() external payable nonReentrant {
         require(msg.value > 0, "Must send ETH");
+        if (totalRaisedAmount >= BONDING_TARGET) {
+            //TODO handle add liquid
+        }
+
+        require(isRunBonding, "Bonding stop!");
+
+        // require(address(this).balance <= BONDING_TARGET, "Completed bonding!");
         require(
-            block.timestamp >= lastTradeTime[msg.sender].add(TRADE_COOLDOWN),
+            block.timestamp >= lastTradeTime[msg.sender] + TRADE_COOLDOWN,
             "Too soon"
         );
 
         uint256 tokenAmount = getTokensForETH(msg.value);
-        require(tokenAmount <= MAX_BUY_AMOUNT, "Exceeds max buy");
+
+        require(tokenAmount > 0, "buyTokens Err: Invalid token amount!");
+        console.log("buyTokens xxx");
         require(
-            totalSoldAmount.add(tokenAmount) <= MAX_SUPPLY,
+            totalSoldAmount + tokenAmount <= MAX_SUPPLY,
             "Exceeds available supply"
         );
+        // stop bonding
+        if (
+            totalSoldAmount + tokenAmount == MAX_SUPPLY ||
+            totalRaisedAmount + msg.value >= BONDING_TARGET
+        ) {
+            isRunBonding = false;
+        }
 
-        uint256 burnAmount = tokenAmount.mul(BURN_PERCENT).div(DENOMINATOR);
-        uint256 remainingAmount = tokenAmount.sub(burnAmount);
-
+        uint256 burnAmount = (tokenAmount * BURN_PERCENT) / DENOMINATOR;
+        uint256 remainingAmount = tokenAmount - burnAmount;
         // Create vesting schedule
         agentToken.createVestingScheduleForBuyer(msg.sender, remainingAmount);
 
-        totalSoldAmount = totalSoldAmount.add(tokenAmount);
-        totalRaisedAmount = totalRaisedAmount.add(msg.value);
+        totalSoldAmount += tokenAmount;
+        totalRaisedAmount += msg.value;
         agentToken.burn(msg.sender, burnAmount);
 
         lastTradeTime[msg.sender] = block.timestamp;
@@ -193,8 +133,8 @@ contract BondingCurve is Ownable, ReentrancyGuard {
             tokenAmount,
             block.timestamp
         );
-
-        emit Trade(msg.sender, tokenAmount, getCurrentPrice(), block.timestamp);
+        uint256 currentPrice = msg.value / tokenAmount;
+        emit Trade(msg.sender, tokenAmount, currentPrice, block.timestamp);
     }
 
     // Sell tokens for ETH
@@ -206,18 +146,18 @@ contract BondingCurve is Ownable, ReentrancyGuard {
         );
         require(tokenAmount <= MAX_SELL_AMOUNT, "Exceeds max sell");
         require(
-            block.timestamp >= lastTradeTime[msg.sender].add(TRADE_COOLDOWN),
+            block.timestamp >= lastTradeTime[msg.sender] + TRADE_COOLDOWN,
             "Too soon"
         );
 
         uint256 refundAmount = getETHForTokens(tokenAmount);
         require(
-            address(this).balance >= refundAmount,
+            totalRaisedAmount >= refundAmount,
             "Insufficient contract balance"
         );
 
-        uint256 burnAmount = tokenAmount.mul(BURN_PERCENT).div(DENOMINATOR);
-        uint256 remainingAmount = tokenAmount.sub(burnAmount);
+        uint256 burnAmount = (tokenAmount * BURN_PERCENT) / DENOMINATOR;
+        uint256 remainingAmount = tokenAmount - burnAmount;
 
         agentToken.burn(msg.sender, remainingAmount);
         agentToken.burn(msg.sender, burnAmount);
@@ -226,36 +166,88 @@ contract BondingCurve is Ownable, ReentrancyGuard {
         require(success, "ETH transfer failed");
 
         lastTradeTime[msg.sender] = block.timestamp;
-        totalSoldAmount = totalSoldAmount.sub(tokenAmount);
-        totalRaisedAmount = totalRaisedAmount.sub(refundAmount);
+        totalSoldAmount -= tokenAmount;
+        totalRaisedAmount -= refundAmount;
 
+        uint256 currentPrice = refundAmount / tokenAmount;
         emit TokensSold(msg.sender, tokenAmount, refundAmount, block.timestamp);
-        emit Trade(msg.sender, tokenAmount, getCurrentPrice(), block.timestamp);
+        emit Trade(msg.sender, tokenAmount, currentPrice, block.timestamp);
     }
 
-    // View functions
-    function getRaisedAmount() public view returns (uint256) {
-        return totalRaisedAmount;
+    function getTokensForETH(uint256 _ethAmount) public view returns (uint256) {
+        uint256 tokenAmount;
+        if (totalSoldAmount == 0) {
+            tokenAmount = _ethAmount * INITIAL_PRICE;
+            if (tokenAmount > MAX_BUY_AMOUNT) {
+                return MAX_BUY_AMOUNT;
+            }
+        } else {
+            tokenAmount = calculatePurchaseReturn(
+                totalSoldAmount,
+                totalRaisedAmount,
+                uint32(reserveRatio),
+                _ethAmount
+            );
+            // for sure not over MAX_SUPPLY
+        }
+
+        if (totalSoldAmount + tokenAmount > MAX_SUPPLY) {
+            tokenAmount = MAX_SUPPLY - totalSoldAmount;
+        }
+        return tokenAmount;
     }
 
-    function getTotalSoldAmount() public view returns (uint256) {
-        return totalSoldAmount;
-    }
-
-    function creatorBuyEvent(
-        address buyer,
-        uint256 ethValue,
+    function getETHForTokens(
         uint256 tokenAmount
-    ) external onlyOwner {
-        emit TokensPurchased(buyer, ethValue, tokenAmount, block.timestamp);
-        emit Trade(buyer, tokenAmount, ethValue, block.timestamp);
+    ) public view returns (uint256) {
+        uint256 ethAmount;
+        if (totalSoldAmount == 0) {
+            return 0;
+        }
+        ethAmount = calculateSaleReturn(
+            totalSoldAmount,
+            totalRaisedAmount,
+            uint32(reserveRatio),
+            tokenAmount
+        );
+        // for sure not over balance
+        if (totalRaisedAmount < ethAmount) {
+            ethAmount = totalSoldAmount;
+        }
+        return ethAmount;
     }
 
     // Emergency functions
     receive() external payable {}
     fallback() external payable {}
 
-    // Add liquidity to PancakeSwap
+    function getRaisedAmount() public view returns (uint256) {
+        return totalRaisedAmount;
+    }
+    function getTotalSoldAmount() public view returns (uint256) {
+        return totalSoldAmount;
+    }
+
+    function getCurrentPrice() public view returns (uint256) {
+        uint256 ethAmount = 1e10;
+        uint256 tokenAmount = getTokensForETH(ethAmount);
+        if (tokenAmount == 0) {
+            return 0;
+        }
+        return (ethAmount * 1e18) / tokenAmount;
+    }
+
+    function creatorBuy(
+        address buyer,
+        uint256 ethValue,
+        uint256 tokenAmount
+    ) external onlyOwner {
+        totalSoldAmount += tokenAmount;
+        totalRaisedAmount += ethValue;
+        emit TokensPurchased(buyer, ethValue, tokenAmount, block.timestamp);
+        emit Trade(buyer, tokenAmount, ethValue / tokenAmount, block.timestamp);
+    }
+
     function addLiquidity() external payable {
         // Approve router to spend tokens
         // require(
@@ -287,3 +279,5 @@ contract BondingCurve is Ownable, ReentrancyGuard {
         );
     }
 }
+//TODO
+// FEE OF BONDING SEND TO STAKING

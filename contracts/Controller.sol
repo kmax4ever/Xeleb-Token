@@ -7,8 +7,8 @@ contract Controller is Ownable {
     mapping(address => address) private _bondings;
     uint256 public FEE = 0.001 ether;
     address public FEE_RECEIVER;
-    uint256 private MAX_CREATOR_BUY_PERCENT = 500; // 5%;
-    uint256 public constant BONDING_PERCENT = 7000;
+    uint256 private MAX_CREATOR_BUY_PERCENT = 500; // 5%// of total bonding
+    uint256 public constant BONDING_PERCENT = 7500;
     uint256 public constant DENOMINATOR = 10000;
 
     event TokenCreated(
@@ -55,12 +55,12 @@ contract Controller is Ownable {
         uint256 buyAmount = msg.value - FEE;
         if (buyAmount > 0) {
             uint256 tokenAmount = newBondingCurve.getTokensForETH(buyAmount);
-            uint256 maxBuy = (totalSupply * MAX_CREATOR_BUY_PERCENT) /
+            uint256 maxBuy = (bondingSupply * MAX_CREATOR_BUY_PERCENT) /
                 DENOMINATOR;
             if (tokenAmount > maxBuy) {
                 tokenAmount = maxBuy;
             }
-            newBondingCurve.creatorBuyEvent(msg.sender, buyAmount, tokenAmount);
+            newBondingCurve.creatorBuy(msg.sender, buyAmount, tokenAmount);
             agentToken.createVestingScheduleForCreator(msg.sender, tokenAmount);
             payable(address(newBondingCurve)).transfer(buyAmount);
         }

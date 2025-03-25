@@ -28,11 +28,12 @@ async function main() {
       let totalRaisedAmount = +fromWei(await bondingTest.totalRaisedAmount());
       console.log("totalRaisedAmount", totalRaisedAmount);
       let isContinue = true;
+      const historys = [];
       while (isContinue) {
         // const currentPrice = await bondingTest.getCurrentPrice();
         // console.log("currentPrice", +fromWei(currentPrice));
 
-        let buyAmount = randomInt(1, 10) / 100;
+        let buyAmount = randomInt(1, 10) / 10;
         console.log({ buyAmount });
 
         if (totalRaisedAmount + buyAmount > 24) {
@@ -44,19 +45,25 @@ async function main() {
         });
         totalRaisedAmount += buyAmount;
         console.log({ totalRaisedAmount });
-
-        if (totalRaisedAmount >= 24) {
-          const totalSoldAmount = await bondingTest.totalSoldAmount();
-          rs.push(totalSoldAmount);
+        historys.push(buyAmount);
+        const totalSoldAmount = +fromWei(await bondingTest.totalSoldAmount());
+        if (totalRaisedAmount >= 24 || totalSoldAmount == 700000000) {
+          rs.push({
+            totalRaisedAmount,
+            totalSoldAmount,
+            historys: historys.toString(),
+          });
           console.log("totalSoldAmount", +fromWei(totalSoldAmount));
           isContinue = false;
         }
       }
     } catch (error) {
-      rs.push(0);
+      rs.push({});
     }
   }
-  console.log({ rs });
+
+  var fs = require("fs");
+  fs.writeFileSync("./scripts/test-result.json", JSON.stringify(rs, null, 4));
 }
 
 main().catch((error) => {

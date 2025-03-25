@@ -220,11 +220,16 @@ export const sellFunc = async (
 export const getTokensForETH = async (bodingContract, amount) => {
   const tokenForEth = await bodingContract.getTokensForETH(toWei(amount));
   console.log({ tokenForEth: +fromWei(tokenForEth) });
+  return tokenForEth;
 };
 
 export const getEthForToken = async (bodingContract, amount) => {
-  const ethForToken = await bodingContract.getETHForTokens(toWei(amount));
-  console.log({ ethForToken: +fromWei(ethForToken) });
+  try {
+    const ethForToken = await bodingContract.getETHForTokens(toWei(amount));
+    console.log({ ethForToken: +fromWei(ethForToken) });
+  } catch (error) {
+    console.log({ error });
+  }
 };
 
 export const randomInt = (min, max) => {
