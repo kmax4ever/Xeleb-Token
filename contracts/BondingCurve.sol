@@ -65,7 +65,7 @@ contract BondingCurve is Ownable, ReentrancyGuard {
     event Trade(
         address indexed trader,
         uint256 amount,
-        uint256 price,
+        UD60x18 price,
         uint256 timestamp
     );
 
@@ -194,8 +194,10 @@ contract BondingCurve is Ownable, ReentrancyGuard {
             tokenAmount,
             block.timestamp
         );
-
-        emit Trade(msg.sender, tokenAmount, getCurrentPrice(), block.timestamp);
+        UD60x18 currentPrice = ud(msg.value).div(ud(tokenAmount));
+        console.log("msg value", msg.value);
+        console.log("currentPrice", currentPrice.unwrap());
+        emit Trade(msg.sender, tokenAmount, currentPrice, block.timestamp);
     }
 
     // Sell tokens for ETH
@@ -229,9 +231,10 @@ contract BondingCurve is Ownable, ReentrancyGuard {
         lastTradeTime[msg.sender] = block.timestamp;
         totalSoldAmount = totalSoldAmount.sub(tokenAmount);
         totalRaisedAmount = totalRaisedAmount.sub(refundAmount);
-
         emit TokensSold(msg.sender, tokenAmount, refundAmount, block.timestamp);
-        emit Trade(msg.sender, tokenAmount, getCurrentPrice(), block.timestamp);
+
+        UD60x18 currentPrice = ud(refundAmount).div(ud(tokenAmount));
+        emit Trade(msg.sender, tokenAmount, currentPrice, block.timestamp);
     }
 
     // View functions
@@ -249,7 +252,8 @@ contract BondingCurve is Ownable, ReentrancyGuard {
         uint256 tokenAmount
     ) external onlyOwner {
         emit TokensPurchased(buyer, ethValue, tokenAmount, block.timestamp);
-        emit Trade(buyer, tokenAmount, ethValue, block.timestamp);
+        UD60x18 currentPrice = ud(ethValue).div(ud(tokenAmount));
+        emit Trade(buyer, tokenAmount, currentPrice, block.timestamp);
     }
 
     // Emergency functions
