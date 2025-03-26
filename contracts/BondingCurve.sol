@@ -22,7 +22,7 @@ contract BondingCurve is Ownable, ReentrancyGuard {
     uint256 public constant PRICE_SCALING_FACTOR = 348999e21;
     uint256 public MAX_SUPPLY; // 700M tokens
     uint256 public constant BONDING_TARGET = 24e18; // 24 ETH target price
-    uint256 public constant INITIAL_PRICE = 765e7; // 0.00000000765 ETH initial price
+    uint256 public constant INITIAL_PRICE = 765e6; // 0.000000000765 ETH initial price
     UD60x18 public SLOPE; // Slope of the linear curve
 
     // Trading fees
