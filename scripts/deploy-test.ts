@@ -21,6 +21,7 @@ async function main() {
   const rs = [];
 
   for (let index = 0; index < 20; index++) {
+    const historys = [];
     try {
       const BondingTest = await ethers.getContractFactory("BondingTest");
       const bondingTest = await BondingTest.deploy();
@@ -32,7 +33,7 @@ async function main() {
         // const currentPrice = await bondingTest.getCurrentPrice();
         // console.log("currentPrice", +fromWei(currentPrice));
 
-        let buyAmount = randomInt(1, 10) / 100;
+        let buyAmount = randomInt(1, 10) / 10;
         console.log({ buyAmount });
 
         if (totalRaisedAmount + buyAmount > 24) {
@@ -40,15 +41,19 @@ async function main() {
         }
         //console.log({ buyAmount });
         const tx = await bondingTest.buyTokens({
-          value: toWei(buyAmount),
+          value: toWei(buyAmount.toFixed(5)),
         });
         totalRaisedAmount += buyAmount;
         console.log({ totalRaisedAmount });
-
-        if (totalRaisedAmount >= 24) {
-          const totalSoldAmount = await bondingTest.totalSoldAmount();
-          rs.push(totalSoldAmount);
-          console.log("totalSoldAmount", +fromWei(totalSoldAmount));
+        historys.push(buyAmount);
+        const totalSoldAmount = +fromWei(await bondingTest.totalSoldAmount());
+        if (totalRaisedAmount >= 24 || totalSoldAmount == 750000000) {
+          rs.push({
+            totalSoldAmount,
+            totalRaisedAmount,
+            historys: historys.toString(),
+          });
+          console.log("totalSoldAmount", totalSoldAmount);
           isContinue = false;
         }
       }
@@ -57,6 +62,8 @@ async function main() {
     }
   }
   console.log({ rs });
+  var fs = require("fs");
+  fs.writeFileSync("./scripts/test-bonding.json", JSON.stringify(rs, null, 4));
 }
 
 main().catch((error) => {

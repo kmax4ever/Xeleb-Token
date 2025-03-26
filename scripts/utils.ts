@@ -154,10 +154,9 @@ export const buyFunc = async (
 ) => {
   console.log("-------------------- BUY---------------------");
   console.log({ buyAmount: amount });
-  await bodingContract.get;
   await bodingContract.connect(user).buyTokens({
     value: toWei(amount),
-    nonce: await provider.getTransactionCount(user.address, "latest"),
+    nonce: await etherProvider.getTransactionCount(user.address, "latest"),
   });
 
   //const bondingAddr = await bodingContract.getAddress();

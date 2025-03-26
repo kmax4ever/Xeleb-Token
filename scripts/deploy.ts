@@ -28,6 +28,7 @@ async function main() {
   let bondingAddr = "";
   if (Number(process.env.CHAIN_ID) !== 97) {
     console.log("-------CREATE TOKEN------");
+
     const tx = await factory
       .connect(creator)
       .createToken(
@@ -35,9 +36,8 @@ async function main() {
         newToken.symbol,
         config.WALLET.STAKING,
         toWei(newToken.totalSupply),
-        { value: toWei(0.4) }
+        { value: toWei(0.001) }
       );
-
     await tx.wait();
     console.log("hash :", tx.hash);
     agentTokenAddr = await factory.getTokenByOwner(creator.address);
@@ -47,6 +47,11 @@ async function main() {
       bondingAddr
     );
   }
+
+  // const bondingList = await factory.getBondingList();
+  // console.log({ bondingList });
+  // const data = bondingList[0];
+
   const CONTRACT_ADDRESSES_MAP = {
     controller: await factory.getAddress(),
     agentTokenAddr,

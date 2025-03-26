@@ -35,7 +35,7 @@ async function main() {
       nonce: (await provider.getTransactionCount(address, "latest")) + 1,
       to: controllerAddress,
       data: dataObj,
-      value: toWei(0.15),
+      value: toWei(0.011),
     };
 
     const txn = await wallet.sendTransaction(tx);
