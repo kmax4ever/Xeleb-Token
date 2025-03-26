@@ -3,6 +3,11 @@ pragma solidity ^0.8.20;
 import "./AiAgentToken.sol";
 import "./BondingCurve.sol";
 contract Controller is Ownable {
+    struct BondingData {
+        address bondingAddr;
+        address tokenAdddr;
+    }
+    //REMOVE LATER
     mapping(address => address) private _tokens;
     mapping(address => address) private _bondings;
     uint256 public FEE = 0.001 ether;
@@ -10,6 +15,7 @@ contract Controller is Ownable {
     uint256 private MAX_CREATOR_BUY_PERCENT = 500; // 5%;
     uint256 public constant BONDING_PERCENT = 7500;
     uint256 public constant DENOMINATOR = 10000;
+    BondingData[] private _bondingList; //REMOVE LATER
 
     event TokenCreated(
         address indexed tokenAddress,
@@ -77,8 +83,10 @@ contract Controller is Ownable {
             msg.sender,
             totalSupply
         );
+        _bondingList.push(
+            BondingData(address(newBondingCurve), address(agentToken))
+        );
         emit BondingCurveCreated(address(newBondingCurve), address(agentToken));
-
         return address(agentToken);
     }
 
@@ -101,6 +109,10 @@ contract Controller is Ownable {
 
     function getBondingByToken(address token) public view returns (address) {
         return _bondings[token];
+    }
+
+    function getBondingList() public view returns (BondingData[] memory) {
+        return _bondingList;
     }
 
     //TODO

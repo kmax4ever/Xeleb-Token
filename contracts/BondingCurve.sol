@@ -28,13 +28,19 @@ contract BondingCurve is Ownable, ReentrancyGuard {
     // Trading fees
     uint256 public constant FEE_PERCENT = 10; // 1%
     uint256 public constant BURN_PERCENT = 10; // 1%
+
     uint256 public constant DENOMINATOR = 1000;
 
+    uint256 public constant MAX_BUY_PERCENT = 50;
+    uint256 private MAX_BUY_AMOUNT;
+
     // Trading limits
-    uint256 public constant MAX_BUY_AMOUNT = 1_000_000_000 * 1e18; // 1M tokens per transaction
-    uint256 public constant MAX_SELL_AMOUNT = 1_000_000_000 * 1e18; // 1M tokens per transaction
+    uint256 public constant MAX_BUY_AMOUNT_PER_TX = 1_000_000_000 * 1e18; // 1M tokens per transaction
+    uint256 public constant MAX_SELL_AMOUNT_PER_TX = 1_000_000_000 * 1e18; // 1M tokens per transaction
     address public constant PANCAKE_SWAP_ROUTER_V2 =
         0xD99D1c33F9fC3444f8101754aBC46c52416550D1;
+
+    // max buy of user
 
     // Time-based restrictions
     uint256 public constant TRADE_COOLDOWN = 0;
@@ -78,6 +84,7 @@ contract BondingCurve is Ownable, ReentrancyGuard {
         require(initSupply > 0, "Invalid supply");
         agentToken = AiAgentToken(_token);
         MAX_SUPPLY = initSupply;
+        MAX_BUY_AMOUNT = (initSupply * MAX_BUY_PERCENT) / DENOMINATOR;
         pancakeSwapRouter = IUniswapV2Router01(PANCAKE_SWAP_ROUTER_V2);
 
         UD60x18 targetPrice = ud(BONDING_TARGET);
@@ -126,6 +133,11 @@ contract BondingCurve is Ownable, ReentrancyGuard {
         UD60x18 ethAmount = ud(_ethAmount);
         UD60x18 currentPrice = ud(price);
         UD60x18 tokenAmount = ethAmount.div(currentPrice);
+
+        if (totalSoldAmount == 0 && tokenAmount.unwrap() > MAX_BUY_AMOUNT) {
+            tokenAmount = ud(MAX_BUY_AMOUNT);
+        }
+
         return tokenAmount.unwrap();
     }
 
@@ -137,8 +149,7 @@ contract BondingCurve is Ownable, ReentrancyGuard {
 
         UD60x18 tokens = ud(tokenAmount);
         UD60x18 currentPrice = ud(price);
-        UD60x18 ethAmount = tokens.mul(currentPrice).div(ud(1e18));
-
+        UD60x18 ethAmount = tokens.mul(currentPrice).div(ud(PRICE_DENOMINATOR));
         return ethAmount.unwrap();
     }
 
@@ -171,7 +182,7 @@ contract BondingCurve is Ownable, ReentrancyGuard {
         );
 
         uint256 tokenAmount = getTokensForETH(msg.value);
-        require(tokenAmount <= MAX_BUY_AMOUNT, "Exceeds max buy");
+        require(tokenAmount <= MAX_BUY_AMOUNT_PER_TX, "Exceeds max buy");
         require(
             totalSoldAmount.add(tokenAmount) <= MAX_SUPPLY,
             "Exceeds available supply"
@@ -207,7 +218,7 @@ contract BondingCurve is Ownable, ReentrancyGuard {
             agentToken.balanceOf(msg.sender) >= tokenAmount,
             "Insufficient balance"
         );
-        require(tokenAmount <= MAX_SELL_AMOUNT, "Exceeds max sell");
+        require(tokenAmount <= MAX_SELL_AMOUNT_PER_TX, "Exceeds max sell");
         require(
             block.timestamp >= lastTradeTime[msg.sender].add(TRADE_COOLDOWN),
             "Too soon"

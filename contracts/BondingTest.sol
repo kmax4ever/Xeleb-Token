@@ -9,12 +9,16 @@ contract BondingTest {
     using SafeMath for uint256;
     // Constants with increased precision
     uint256 public constant INITIAL_PRICE = 765e7; // 0.00000000765 ETH
-    uint256 public constant MAX_SUPPLY = 700_000_000e18; // 700M tokens
+    uint256 public constant MAX_SUPPLY = 750_000_000e18; // 700M tokens
     uint256 public constant PRICE_SCALING_FACTOR = 348999e21; // Increased from 1e25 for more precision
     uint256 public constant BONDING_TARGET = 24e18; // 24 ETH
     UD60x18 public SLOPE;
     uint256 public totalSoldAmount;
     uint256 public totalRaisedAmount;
+    uint256 public constant MAX_BUY_PERCENT = 50;
+    uint256 private MAX_BUY_AMOUNT;
+    uint256 public constant DENOMINATOR = 1000;
+    uint256 public constant PRICE_DENOMINATOR = 1e18;
 
     constructor() {
         // Calculate slope with increased precision
@@ -24,7 +28,7 @@ contract BondingTest {
 
         // Calculate slope with higher precision
         SLOPE = targetPrice.sub(initialPrice).div(maxSupply);
-
+        MAX_BUY_AMOUNT = (MAX_SUPPLY * MAX_BUY_PERCENT) / DENOMINATOR;
         console.log("Initial Price (ETH):", INITIAL_PRICE);
         console.log("Max Supply (tokens):", MAX_SUPPLY);
         console.log("Target Price (ETH):", BONDING_TARGET);
@@ -49,17 +53,30 @@ contract BondingTest {
     }
 
     function getTokensForETH(uint256 _ethAmount) public view returns (uint256) {
+        uint256 tokenAmount = calculatePurchaseReturn(_ethAmount);
+        if (totalSoldAmount.add(tokenAmount) > MAX_SUPPLY) {
+            tokenAmount = MAX_SUPPLY.sub(totalSoldAmount);
+        }
+        return tokenAmount;
+    }
+
+    function calculatePurchaseReturn(
+        uint256 _ethAmount
+    ) public view returns (uint256) {
         uint256 price = getCurrentPrice();
+        console.log("calculatePurchaseReturn PRICE", price);
         require(price > 0, "Invalid price");
 
-        // Use higher precision for token calculation
+        // Calculate tokens: tokenAmount = ethAmount / price
+        // We need to adjust for decimals since price is in wei
         UD60x18 ethAmount = ud(_ethAmount);
         UD60x18 currentPrice = ud(price);
-
-        // Calculate token amount with increased precision
         UD60x18 tokenAmount = ethAmount.div(currentPrice);
 
-        // Round down to avoid dust amounts
+        if (totalSoldAmount == 0 && tokenAmount.unwrap() > MAX_BUY_AMOUNT) {
+            tokenAmount = ud(MAX_BUY_AMOUNT);
+        }
+
         return tokenAmount.unwrap();
     }
 
@@ -78,5 +95,35 @@ contract BondingTest {
 
         console.log("totalRaisedAmount", totalRaisedAmount);
         console.log("totalSoldAmount", totalSoldAmount);
+    }
+    function getETHForTokens(
+        uint256 tokenAmount
+    ) public view returns (uint256) {
+        uint256 ethAmount = calculateSaleReturn(tokenAmount);
+        // for sure not over balance
+        if (totalRaisedAmount < ethAmount) {
+            ethAmount = totalRaisedAmount;
+        }
+        return ethAmount;
+    }
+
+    function calculateSaleReturn(
+        uint256 tokenAmount
+    ) public view returns (uint256) {
+        uint256 price = getCurrentPrice();
+        require(price > 0, "Invalid price");
+
+        UD60x18 tokens = ud(tokenAmount);
+        UD60x18 currentPrice = ud(price);
+        UD60x18 ethAmount = tokens.mul(currentPrice).div(ud(PRICE_DENOMINATOR));
+        return ethAmount.unwrap();
+    }
+    function sellToken(uint256 tokenAmount) public payable {
+        require(msg.value > 0, "Must send ETH");
+
+        // Calculate tokens with increased precision
+        uint256 ethRefund = getETHForTokens(tokenAmount);
+        totalSoldAmount -= tokenAmount;
+        totalRaisedAmount -= ethRefund;
     }
 }
