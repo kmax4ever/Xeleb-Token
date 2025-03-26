@@ -92,10 +92,6 @@ contract BondingCurve is Ownable, ReentrancyGuard {
         UD60x18 maxSupply = ud(initSupply);
 
         SLOPE = targetPrice.sub(initialPrice).div(maxSupply);
-        console.log("SLOPE", SLOPE.unwrap());
-        console.log("INITIAL_PRICE", INITIAL_PRICE);
-        console.log("MAX_SUPPLY", MAX_SUPPLY);
-        console.log("BONDING_TARGET", BONDING_TARGET);
     }
 
     function getCurrentPrice() public view returns (uint256) {
@@ -206,8 +202,6 @@ contract BondingCurve is Ownable, ReentrancyGuard {
             block.timestamp
         );
         UD60x18 currentPrice = ud(msg.value).div(ud(tokenAmount));
-        console.log("msg value", msg.value);
-        console.log("currentPrice", currentPrice.unwrap());
         emit Trade(msg.sender, tokenAmount, currentPrice, block.timestamp);
     }
 
@@ -257,11 +251,14 @@ contract BondingCurve is Ownable, ReentrancyGuard {
         return totalSoldAmount;
     }
 
-    function creatorBuyEvent(
+    function creatorBuy(
         address buyer,
         uint256 ethValue,
         uint256 tokenAmount
     ) external onlyOwner {
+        totalSoldAmount = totalSoldAmount.add(tokenAmount);
+        totalRaisedAmount = totalRaisedAmount.add(ethValue);
+
         emit TokensPurchased(buyer, ethValue, tokenAmount, block.timestamp);
         UD60x18 currentPrice = ud(ethValue).div(ud(tokenAmount));
         emit Trade(buyer, tokenAmount, currentPrice, block.timestamp);
