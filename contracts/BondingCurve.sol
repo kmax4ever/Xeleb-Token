@@ -19,7 +19,7 @@ contract BondingCurve is Ownable, ReentrancyGuard {
 
     // Bonding curve parameters
     uint256 public constant PRICE_DENOMINATOR = 1e18;
-    uint256 public constant PRICE_SCALING_FACTOR = 348999e21;
+    uint256 public constant PRICE_SCALING_FACTOR = 358999e21;
     uint256 public MAX_SUPPLY; // 700M tokens
     uint256 public constant BONDING_TARGET = 24e18; // 24 ETH target price
     uint256 public constant INITIAL_PRICE = 765e6; // 0.000000000765 ETH initial price
@@ -33,6 +33,8 @@ contract BondingCurve is Ownable, ReentrancyGuard {
 
     uint256 public constant MAX_BUY_PERCENT = 50;
     uint256 private MAX_BUY_AMOUNT;
+
+    uint256 public constant ROUND_PERCENT = 10;
 
     // Trading limits
     uint256 public constant MAX_BUY_AMOUNT_PER_TX = 1_000_000_000 * 1e18; // 1M tokens per transaction
@@ -150,11 +152,31 @@ contract BondingCurve is Ownable, ReentrancyGuard {
     }
 
     function getTokensForETH(uint256 _ethAmount) public view returns (uint256) {
-        // for sure not over MAX_SUPPLY
+        // For sure not over MAX_SUPPLY
         uint256 tokenAmount = calculatePurchaseReturn(_ethAmount);
-        if (totalSoldAmount.add(tokenAmount) > MAX_SUPPLY) {
-            tokenAmount = MAX_SUPPLY.sub(totalSoldAmount);
+        uint256 nextRaised = totalRaisedAmount.add(_ethAmount).add(10000); // round
+        if (
+            totalSoldAmount.add(tokenAmount) >= MAX_SUPPLY ||
+            nextRaised >= BONDING_TARGET
+        ) {
+            //ROUND buy amount
+            uint remaingAmount = MAX_SUPPLY.sub(totalSoldAmount);
+            if (
+                remaingAmount <
+                MAX_SUPPLY.mul(ROUND_PERCENT).div(DENOMINATOR) &&
+                nextRaised >= BONDING_TARGET
+            ) {
+                return remaingAmount;
+            }
+
+            uint256 rate = (
+                (_ethAmount.mul(PRICE_DENOMINATOR) + totalRaisedAmount)
+            ) / BONDING_TARGET;
+            tokenAmount = remaingAmount.mul(rate).div(PRICE_DENOMINATOR);
         }
+        // if (totalSoldAmount.add(tokenAmount) > MAX_SUPPLY) {
+        //     tokenAmount = MAX_SUPPLY.sub(totalSoldAmount);
+        // }
         return tokenAmount;
     }
 

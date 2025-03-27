@@ -4,13 +4,13 @@ pragma solidity ^0.8.20;
 import "hardhat/console.sol";
 import {UD60x18, ud} from "@prb/math/src/UD60x18.sol";
 import "./lib/SafeMath.sol";
-
-contract BondingTest {
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+contract BondingTest is ReentrancyGuard {
     using SafeMath for uint256;
     // Constants with increased precision
     uint256 public constant INITIAL_PRICE = 765e7; // 0.00000000765 ETH
     uint256 public constant MAX_SUPPLY = 750_000_000e18; // 700M tokens
-    uint256 public constant PRICE_SCALING_FACTOR = 348999e21; // Increased from 1e25 for more precision
+    uint256 public constant PRICE_SCALING_FACTOR = 349999e21; // Increased from 1e25 for more precision
     uint256 public constant BONDING_TARGET = 24e18; // 24 ETH
     UD60x18 public SLOPE;
     uint256 public totalSoldAmount;
@@ -19,6 +19,7 @@ contract BondingTest {
     uint256 private MAX_BUY_AMOUNT;
     uint256 public constant DENOMINATOR = 1000;
     uint256 public constant PRICE_DENOMINATOR = 1e18;
+    uint256 public constant ROUND_PERCENT = 5;
 
     constructor() {
         // Calculate slope with increased precision
@@ -53,10 +54,25 @@ contract BondingTest {
     }
 
     function getTokensForETH(uint256 _ethAmount) public view returns (uint256) {
+        // for sure not over MAX_SUPPLY
         uint256 tokenAmount = calculatePurchaseReturn(_ethAmount);
-        if (totalSoldAmount.add(tokenAmount) > MAX_SUPPLY) {
-            tokenAmount = MAX_SUPPLY.sub(totalSoldAmount);
+
+        if (totalSoldAmount.add(tokenAmount) >= MAX_SUPPLY) {
+            uint remaingAmount = MAX_SUPPLY.sub(totalSoldAmount);
+            if (
+                remaingAmount < MAX_SUPPLY.mul(ROUND_PERCENT).div(DENOMINATOR)
+            ) {
+                return remaingAmount;
+            }
+
+            uint256 rate = (
+                (_ethAmount.mul(PRICE_DENOMINATOR) + totalRaisedAmount)
+            ) / BONDING_TARGET;
+            tokenAmount = remaingAmount.mul(rate).div(PRICE_DENOMINATOR);
         }
+        // if (totalSoldAmount.add(tokenAmount) > MAX_SUPPLY) {
+        //     tokenAmount = MAX_SUPPLY.sub(totalSoldAmount);
+        // }
         return tokenAmount;
     }
 
@@ -80,18 +96,26 @@ contract BondingTest {
         return tokenAmount.unwrap();
     }
 
-    function buyTokens() public payable {
+    function buyTokens() public payable nonReentrant {
         require(msg.value > 0, "Must send ETH");
 
-        // Calculate tokens with increased precision
         uint256 tokenAmount = getTokensForETH(msg.value);
         require(tokenAmount > 0, "Invalid token amount");
+
+        uint256 excessETH = 0;
+        // Check if we would exceed max supply
         if (tokenAmount + totalSoldAmount > MAX_SUPPLY) {
             tokenAmount = MAX_SUPPLY - totalSoldAmount;
+            // Refund excess ETH
+            excessETH = msg.value - (tokenAmount * getCurrentPrice());
+            if (excessETH > 0) {
+                payable(msg.sender).transfer(excessETH);
+            }
         }
+
         // Update state with precise amounts
         totalSoldAmount = totalSoldAmount.add(tokenAmount);
-        totalRaisedAmount = totalRaisedAmount.add(msg.value);
+        totalRaisedAmount = totalRaisedAmount.add(msg.value - excessETH);
 
         console.log("totalRaisedAmount", totalRaisedAmount);
         console.log("totalSoldAmount", totalSoldAmount);
