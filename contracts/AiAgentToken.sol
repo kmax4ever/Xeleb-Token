@@ -275,6 +275,10 @@ contract AiAgentToken is Ownable {
         return true;
     }
 
+    function allowance(address from, address to) public view returns (uint256) {
+        return _allowances[from][to];
+    }
+
     function transferFrom(
         address from,
         address to,
