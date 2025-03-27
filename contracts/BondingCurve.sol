@@ -174,7 +174,7 @@ contract BondingCurve is Ownable, ReentrancyGuard {
             }
 
             uint256 rate = (
-                (_ethAmount.mul(PRICE_DENOMINATOR) + totalRaisedAmount)
+                _ethAmount.mul(PRICE_DENOMINATOR).add(totalRaisedAmount)
             ) / BONDING_TARGET;
             tokenAmount = remaingAmount.mul(rate).div(PRICE_DENOMINATOR);
         }
