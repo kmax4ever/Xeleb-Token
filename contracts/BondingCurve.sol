@@ -22,7 +22,7 @@ contract BondingCurve is Ownable, ReentrancyGuard {
     uint256 public constant PRICE_SCALING_FACTOR = 358999e21;
     uint256 public MAX_SUPPLY; // 700M tokens
     uint256 public constant BONDING_TARGET = 24e18; // 24 ETH target price
-    uint256 public constant INITIAL_PRICE = 765e6; // 0.000000000765 ETH initial price
+    uint256 public constant INITIAL_PRICE = 565e6; // 0.000000000765 ETH initial price
     UD60x18 public SLOPE; // Slope of the linear curve
 
     // Trading fees
@@ -154,6 +154,10 @@ contract BondingCurve is Ownable, ReentrancyGuard {
     function getTokensForETH(uint256 _ethAmount) public view returns (uint256) {
         // For sure not over MAX_SUPPLY
         uint256 tokenAmount = calculatePurchaseReturn(_ethAmount);
+
+        if (totalSoldAmount == MAX_BUY_AMOUNT) {
+            return tokenAmount / 2;
+        }
         uint256 nextRaised = totalRaisedAmount.add(_ethAmount).add(10000); // round
         if (
             totalSoldAmount.add(tokenAmount) >= MAX_SUPPLY ||
@@ -174,9 +178,9 @@ contract BondingCurve is Ownable, ReentrancyGuard {
             ) / BONDING_TARGET;
             tokenAmount = remaingAmount.mul(rate).div(PRICE_DENOMINATOR);
         }
-        // if (totalSoldAmount.add(tokenAmount) > MAX_SUPPLY) {
-        //     tokenAmount = MAX_SUPPLY.sub(totalSoldAmount);
-        // }
+        if (totalSoldAmount.add(tokenAmount) > MAX_SUPPLY) {
+            tokenAmount = MAX_SUPPLY.sub(totalSoldAmount);
+        }
         return tokenAmount;
     }
 
