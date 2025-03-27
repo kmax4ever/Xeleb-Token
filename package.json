@@ -40,6 +40,7 @@
     "compile": "npx hardhat compile",
     "start-node": "npx hardhat node",
     "test": "npx hardhat test test/Test.ts",
-    "deploy-test": "env-cmd -f .env npx hardhat compile && npx hardhat run scripts/deploy-test.ts --network deploy"
+    "deploy-test": "env-cmd -f .env npx hardhat compile && npx hardhat run scripts/deploy-test.ts --network deploy",
+    "deploy-barcon": "env-cmd -f .env npx hardhat compile && npx hardhat run scripts/deploy-test-barcon.ts --network deploy"
   }
 }

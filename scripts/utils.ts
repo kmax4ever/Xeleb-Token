@@ -185,17 +185,23 @@ export const sellFunc = async (
   amount: number
 ) => {
   console.log("---------------------- SELL----------------------");
-  await delay(3);
+  await delay(1);
   await mine(10);
 
   const tokenAddr = await token.getAddress();
   const bondingAddr = await bodingContract.getAddress();
 
-  console.log("-------------------- APPROVE----------------------");
-  await token.connect(user).approve(bondingAddr, toWei(amount - 0.1), {
-    nonce: await provider.getTransactionCount(user.address, "latest"),
-  });
-  await delay(5);
+  const allowance = (await token.allowance(user.address, bondingAddr)) || 0;
+
+  if (!+fromWei(allowance)) {
+    console.log({ allowance });
+    console.log("-------------------- APPROVE----------------------");
+    await token.connect(user).approve(bondingAddr, toWei(amount - 0.1), {
+      nonce: await provider.getTransactionCount(user.address, "latest"),
+    });
+    await delay(5);
+  }
+
   await mine(10);
   await bodingContract.connect(user).sellTokens(toWei(amount - 1), {
     nonce: await provider.getTransactionCount(user.address, "latest"),

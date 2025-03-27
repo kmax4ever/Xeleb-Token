@@ -23,7 +23,7 @@ async function main() {
   for (let index = 0; index < 20; index++) {
     const historys = [];
     try {
-      const BondingTest = await ethers.getContractFactory("BondingTest");
+      const BondingTest = await ethers.getContractFactory("BondingTestBarcon");
       const bondingTest = await BondingTest.deploy();
       //const tokenForETh = await bondingTest.getTokensForETH(toWei(24));
       let totalRaisedAmount = +fromWei(await bondingTest.totalRaisedAmount());
@@ -33,7 +33,7 @@ async function main() {
         // const currentPrice = await bondingTest.getCurrentPrice();
         // console.log("currentPrice", +fromWei(currentPrice));
 
-        let buyAmount = randomInt(1, 10) / 5;
+        let buyAmount = randomInt(1, 10) / 10;
         console.log({ buyAmount });
 
         if (totalRaisedAmount + buyAmount > 24) {
