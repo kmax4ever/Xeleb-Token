@@ -19,7 +19,7 @@ contract Controller is Ownable {
     BondingData[] private _bondingList; //REMOVE LATER
     address public FEE_TOKEN_ADDRESS =
         0xB45D900cc0F65A42f16d4c756319DCac9E71a0cc;
-    uint256 public TOKEN_FEE = 50e18; // Default 50 tokens with 18 decimals
+    uint256 public TOKEN_FEE = 50 ether; // Default 50 tokens with 18 decimals
 
     event TokenCreated(
         address indexed tokenAddress,
@@ -65,12 +65,12 @@ contract Controller is Ownable {
         _bondings[agentAddr] = bondingAddr;
 
         //  auto buy when use create and send token >fee
-        uint256 buyAmount = msg.value - FEE;
-        if (buyAmount > 0) {
+        if (msg.value > FEE) {
+            uint256 buyAmount = msg.value - FEE;
             _buy(bondingAddr, agentAddr, bondingSupply, buyAmount);
         }
-        _transferLiquid(totalSupply, agentAddr, bondingAddr);
 
+        _transferLiquid(totalSupply, agentAddr, bondingAddr);
         emit TokenCreated(agentAddr, name, symbol, msg.sender, totalSupply);
         emit BondingCurveCreated(bondingAddr, agentAddr);
 
@@ -117,15 +117,6 @@ contract Controller is Ownable {
             payable(address(FEE_RECEIVER)).transfer(FEE);
         } else {
             IERC20 token = IERC20(FEE_TOKEN_ADDRESS);
-            require(
-                token.balanceOf(msg.sender) >= TOKEN_FEE,
-                "Insufficient token balance!"
-            );
-            require(
-                token.allowance(msg.sender, address(this)) >= TOKEN_FEE,
-                "Not allowance!"
-            );
-
             token.transferFrom(msg.sender, address(FEE_RECEIVER), TOKEN_FEE);
         }
     }
